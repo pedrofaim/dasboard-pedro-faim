@@ -118,10 +118,9 @@ elif aba == "Skills":
 # =======================
 elif aba == "Análise de Dados":
     st.title("📊 Análise de Dados - Popularidade de Linguagens de Programação")
-
     st.write("O dataset apresenta a **popularidade de linguagens de programação (2020-2025)** baseada em índices de mercado como TIOBE e Stack Overflow Surveys.")
 
-    # ---- 1. Apresentação dos Dados
+    # ---- 1. Visualização dos Dados
     st.subheader("1. Visualização dos Dados")
     st.dataframe(df.head())
 
@@ -152,42 +151,58 @@ elif aba == "Análise de Dados":
 
     # ---- Distribuição
     st.subheader("Distribuição da Popularidade em 2025")
+    st.write("Histograma e KDE mostram a distribuição da popularidade das linguagens, indicando concentração e variações extremas.")
     fig, ax = plt.subplots()
     sns.histplot(df_2025["Popularidade (%)"], kde=True, ax=ax, color="#00C896")
     ax.set_facecolor("#0E1117")
     st.pyplot(fig)
 
+    # ---- Boxplot
+    st.subheader("Boxplot da Popularidade em 2025")
+    st.write("O boxplot evidencia outliers e a mediana das linguagens em 2025.")
+    fig, ax = plt.subplots()
+    sns.boxplot(y=df_2025["Popularidade (%)"], color="#00C896", ax=ax)
+    ax.set_facecolor("#0E1117")
+    st.pyplot(fig)
+
     # ---- 5. Evolução ao longo do tempo
     st.subheader("5. Evolução ao longo do tempo")
+    st.write("Gráfico de linha mostrando a evolução da popularidade de cada linguagem de 2020 a 2025.")
     fig, ax = plt.subplots(figsize=(10,5))
-    for lang in df["Linguagem"].unique():
+    paleta = sns.color_palette("Set2", n_colors=len(df["Linguagem"].unique()))
+    for i, lang in enumerate(df["Linguagem"].unique()):
         subset = df[df["Linguagem"] == lang]
-        ax.plot(subset["Ano"], subset["Popularidade (%)"], marker="o", label=lang)
+        ax.plot(subset["Ano"], subset["Popularidade (%)"], marker="o", label=lang, color=paleta[i])
     ax.set_facecolor("#0E1117")
     plt.legend()
     plt.ylabel("Popularidade (%)")
     plt.xlabel("Ano")
     st.pyplot(fig)
 
-    # ---- 6. Intervalo de Confiança
-    st.subheader("6. Intervalo de Confiança (95%) - Popularidade em 2025")
+    # ---- 6. Correlação entre linguagens
+    st.subheader("6. Correlação entre linguagens")
+    st.write("Heatmap mostrando como a popularidade das linguagens se correlaciona entre si.")
+    df_pivot = df.pivot(index="Ano", columns="Linguagem", values="Popularidade (%)")
+    corr = df_pivot.corr()
+    st.dataframe(corr)
+    fig, ax = plt.subplots(figsize=(8,6))
+    sns.heatmap(corr, annot=True, cmap="coolwarm", vmin=-1, vmax=1, ax=ax)
+    st.pyplot(fig)
+
+    # ---- 7. Intervalo de Confiança
+    st.subheader("7. Intervalo de Confiança (95%) - Popularidade em 2025")
     mean = np.mean(df_2025["Popularidade (%)"])
     sem = stats.sem(df_2025["Popularidade (%)"])
     ic = stats.t.interval(0.95, len(df_2025)-1, loc=mean, scale=sem)
-
     st.success(f"Média: {mean:.2f}% | IC 95%: {ic[0]:.2f}% até {ic[1]:.2f}%")
 
-    # ---- 7. Teste de Hipótese
-    st.subheader("7. Teste de Hipótese")
+    # ---- 8. Teste de Hipótese
+    st.subheader("8. Teste de Hipótese")
     st.write("Hipótese: **Python é significativamente mais popular que Java em 2025**")
-
     python_pop = df_2025[df_2025["Linguagem"] == "Python"]["Popularidade (%)"].values
     java_pop = df_2025[df_2025["Linguagem"] == "Java"]["Popularidade (%)"].values
-
     t_stat, p_value = stats.ttest_ind(python_pop, java_pop, equal_var=False)
-
     st.write(f"**t-statistic:** {t_stat:.4f} | **p-value:** {p_value:.4f}")
-
     if p_value < 0.05:
         st.success("✅ Resultado: Rejeitamos H0. Python é estatisticamente mais popular que Java.")
     else:
